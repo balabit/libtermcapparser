@@ -336,6 +336,7 @@ TermcapParser::get_state() const
   term_update(inst->term);
 
   {
+    enable_update_display = false;
     /* write buffer content */
     int offset;
     for (offset = -buffer_line_count; offset <= -inst->term->rows; offset += inst->term->rows)
@@ -344,6 +345,7 @@ TermcapParser::get_state() const
       }
     /* write remainder buffer content which is less than a complete terminal screen */
     copy_term_content_to_cache(offset, -offset);
+    enable_update_display = true;
   }
 
   state.cursor = {inst->term->curs.x, inst->term->curs.y, inst->term->cursor_on == 1};
