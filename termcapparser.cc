@@ -3,6 +3,7 @@
 #include "terminal.h"
 
 #include "putty/termcapparser.hh"
+#include "state_p.hh"
 #include <sstream>
 
 #include <ostream>
@@ -236,9 +237,9 @@ TermcapParser::data_input_filtered(const char *data, int len)
 }
 
 void
-TermcapParser::set_cell(int row, unsigned col, const std::wstring &characters, Cell::Attributes attr) const
+TermcapParser::set_cell(int row, int col, const std::wstring &characters, uint64_t attr) const
 {
-  bool success = state.set_cell(row, col, characters, attr);
+  bool success = ::set_cell(state, row, col, characters, attr);
   if (!success)
     {
       std::ostringstream stream;
@@ -257,7 +258,7 @@ TermcapParser::set_buffer_size(int width, int height)
 void
 TermcapParser::set_terminal_size(int width, int height)
 {
-  state.resize_display(width, height);
+  resize_display(state, width, height);
 
   int max_height = std::max(terminal_buffer_height, height);
   term_size(inst->term, height, width, max_height - height);
@@ -265,16 +266,15 @@ TermcapParser::set_terminal_size(int width, int height)
 }
 
 void
-TermcapParser::copy_term_content_to_cache(int offset, unsigned row_count) const
+TermcapParser::copy_term_content_to_cache(int offset, int row_count) const
 {
   term_scroll(inst->term, -1, offset);
 
   std::wstring characters;
   int absolute_offset = 0;
-  for (unsigned row = 0; row < row_count; row++)
+  for (int row = 0; row < row_count; ++row)
     {
-      Row *r = state.get_row_internal(offset + (int)row);
-      if (!r)
+      if (!is_valid_row(state, offset + row))
         {
           std::ostringstream stream;
           stream << "Invalid row requested to be updated; row='" << row << "', offset='" << offset << "'";
@@ -282,8 +282,8 @@ TermcapParser::copy_term_content_to_cache(int offset, unsigned row_count) const
           continue;
         }
 
-      r->set_attributes(inst->term->disptext[row]->lattr);
-      for (unsigned col = 0; col < (unsigned)inst->term->cols; col++)
+      state.rows[offset + row + state.buffer_size].attributes = inst->term->disptext[row]->lattr;
+      for (auto col = 0; col < inst->term->cols; ++col)
         {
           int relative_offset;
           absolute_offset = col;
@@ -295,7 +295,7 @@ TermcapParser::copy_term_content_to_cache(int offset, unsigned row_count) const
               relative_offset = inst->term->disptext[row]->chars[ absolute_offset ].cc_next;
               absolute_offset += relative_offset;
             } while(relative_offset != 0);
-          set_cell(offset + (int)row, col, characters, inst->term->disptext[row]->chars[col].attr);
+          set_cell(offset + row, col, characters, inst->term->disptext[row]->chars[col].attr);
           characters.clear();
         }
     }
@@ -329,13 +329,14 @@ TermcapParser::get_state() const
       buffer_line_count = terminal_buffer_height;
     }
 
-  state.resize(inst->term->cols, inst->term->rows, buffer_line_count);
-  state.set_palette(palette);
+  resize(state, inst->term->cols, inst->term->rows, buffer_line_count);
+  state.palette = palette;
 
   /* update terminal display buffer */
   term_update(inst->term);
 
   {
+    enable_update_display = false;
     /* write buffer content */
     int offset;
     for (offset = -buffer_line_count; offset <= -inst->term->rows; offset += inst->term->rows)
@@ -344,9 +345,10 @@ TermcapParser::get_state() const
       }
     /* write remainder buffer content which is less than a complete terminal screen */
     copy_term_content_to_cache(offset, -offset);
+    enable_update_display = true;
   }
 
-  state.set_cursor(inst->term->cursor_on == 1, inst->term->curs.x, inst->term->curs.y);
+  state.cursor = {inst->term->curs.x, inst->term->curs.y, inst->term->cursor_on == 1};
 
   /*
    * Scroll to the current content of the display. The content will be updated
@@ -354,7 +356,7 @@ TermcapParser::get_state() const
    */
   term_scroll(inst->term, -1, 0);
 
-  state.set_alternate_screen(inst->term->alt_which != 0);
+  state.alternate_screen = (inst->term->alt_which != 0);
 
   return state;
 }
@@ -378,8 +380,7 @@ TermcapParser::update_display(int x, int y, const std::wstring &str, unsigned lo
     return;
 
   std::wstring chr;
-  Row *row = state.get_row_internal(y);
-  if (!row)
+  if (!is_valid_row(state, y))
     {
       std::ostringstream stream;
       stream << "Invalid row requested to be updated; row='" << y << "'";
@@ -387,7 +388,7 @@ TermcapParser::update_display(int x, int y, const std::wstring &str, unsigned lo
       return;
     }
 
-  row->set_attributes(lattr);
+  state.rows[y + state.buffer_size].attributes = lattr;
   for (std::wstring::const_iterator it = str.begin(); it != str.end(); ++it)
     {
       if (it != str.begin() && !is_combining_character(*it))

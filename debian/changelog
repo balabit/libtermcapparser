@@ -1,3 +1,9 @@
+libtermcapparser (1.0.18) bionic; urgency=low
+
+  * Simplify State,Row,Cell,Palette objects.
+
+ -- Tamas Domok <tamas.domok@oneidentity.com>  Mon, 06 Apr 2020 12:30:00 +0000
+
 libtermcapparser (1.0.17) bionic; urgency=low
 
   * generate third party licenses into deb packages

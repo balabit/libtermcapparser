@@ -1,6 +1,6 @@
-CXXFLAGS= -I$(PREFIX)/include -O0 -g -Wall -I..
+CXXFLAGS= -I$(PREFIX)/include -O3 -pedantic -g -std=c++17 -Wall -I..
 LDFLAGS = -L$(PREFIX)/lib -ltermcapparser -L/usr/lib -lgmock -lgtest -lpthread
-OBJECTS = test.o cell.o row.o state.o palette.o termcapparser.o
+OBJECTS = test.o cell.o state.o termcapparser.o
 
 all: test runtest
 
