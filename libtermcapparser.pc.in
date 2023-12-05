@@ -1,0 +1,10 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: libtermcapparser
+Description: Termcap parser from PuTTY
+Version: @VERSION@
+Libs: -L${libdir} -ltermcapparser
+Cflags: -I${includedir}

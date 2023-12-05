@@ -1,1 +1,2 @@
 putty/*.hh /usr/include/putty
+libtermcapparser.pc usr/lib/pkgconfig

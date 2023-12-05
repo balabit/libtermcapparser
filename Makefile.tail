@@ -13,17 +13,27 @@ $(CXX_OBJS:.cc=.o):
 $(notdir $(C_OBJS:.c=.o)):
 	$(CC) $(COMPAT) $(CFLAGS) $(XFLAGS) -c $<
 
+%: %.in
+	sed -e 's,[@]VERSION[@],$(VERSION),g' \
+	    -e 's,[@]PREFIX[@],$(PREFIX),g' \
+	    $< >$@.new
+	mv $@.new $@
 
-install: $(TARGET)
-	mkdir -p $(DESTDIR)$(libdir)
+PKGCONFIG = libtermcapparser.pc
+
+install: $(TARGET) $(PKGCONFIG)
+	mkdir -p $(DESTDIR)$(libdir)/pkgconfig
 	mkdir -p $(DESTDIR)$(incdir)/$(HEADER_DIR)
 	$(INSTALL) -m 755 $(TARGET) $(DESTDIR)$(libdir)/$(TARGET)
+	$(INSTALL) -m 644 $(PKGCONFIG) $(DESTDIR)$(libdir)/pkgconfig/$(PKGCONFIG)
 	$(INSTALL) -m 644 $(HEADERS) $(DESTDIR)$(incdir)/$(HEADER_DIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(libdir)/$(TARGET)
+	rm -f $(DESTDIR)$(libdir)/pkgconfig/$(PKGCONFIG)
 	rm -f $(DESTDIR)$(incdir)/$(HEADERS)
 	rmdir $(DESTDIR)$(incdir)/$(HEADER_DIR) 2>/dev/null || true
+	rmdir $(DESTDIR)$(libdir)/pkgconfig 2>/dev/null || true
 	rmdir $(DESTDIR)$(libdir) 2>/dev/null || true
 
 install-strip:
@@ -33,7 +43,7 @@ check: install
 	$(MAKE) $(MFLAGS) -C tests -f Makefile.$(TARGET_OS)
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) $(PKGCONFIG)
 	$(MAKE) $(MFLAGS) -C tests -f Makefile.$(TARGET_OS) clean
 
 distclean: clean
