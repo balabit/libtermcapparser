@@ -13,8 +13,7 @@ endif
 
 build:
 	dh_testdir
-	$(MAKE) linux-dep
-	$(MAKE) PREFIX=/usr VERSION=$(version) linux-libtermcapparser.so linux-libtermcapparser.pc
+	$(MAKE) DESTDIR=debian/tmp PREFIX=/usr VERSION=$(version) linux-dep linux-install
 
 clean:
 	dh_testdir
