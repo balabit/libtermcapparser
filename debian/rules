@@ -14,7 +14,7 @@ endif
 build:
 	dh_testdir
 	$(MAKE) linux-dep
-	$(MAKE) VERSION=$(version) linux-libtermcapparser.so linux-libtermcapparser.pc
+	$(MAKE) PREFIX=/usr VERSION=$(version) linux-libtermcapparser.so linux-libtermcapparser.pc
 
 clean:
 	dh_testdir
