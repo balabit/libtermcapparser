@@ -12,21 +12,10 @@ Package: libtermcapparser
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests:
-Provides:
 Description: The libtermcapparser for ADP
 
 Package: libtermcapparser-dev
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libtermcapparser (= ${binary:Version})
-Suggests:
-Provides:
 Description: The libtermcapparser dev package for ADP
-
-Package: libtermcapparser-dbg
-Section: debug
-Priority: extra
-Architecture: any
-Depends: libtermcapparser (= ${binary:Version}), ${misc:Depends}
-Description: The libtermcapparser for ADP - debugging symbols.
