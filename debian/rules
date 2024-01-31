@@ -1,64 +1,16 @@
 #! /usr/bin/make -f
 
-export DH_OPTIONS
+export DH_VERBOSE = 1
 
-version := $(shell dpkg-parsechangelog | grep '^Version:' | \
-		   sed -e 's/.*\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*/\1/')
+%:
+	dh $@
 
-# If a snapshot, supply an explicit version. Release tarballs work it out
-# for themselves.
-ifeq (,$(findstring Version,$(version)))
-verdef := VER=-DSNAPSHOT="$(version)"
-endif
+# No separate build step:
+override_dh_auto_build:
 
-build:
-	dh_testdir
-	$(MAKE) linux-dep
-	$(MAKE) linux-libtermcapparser.so
+include /usr/share/dpkg/pkg-info.mk
+override_dh_auto_install:
+	make DESTDIR=debian/tmp PREFIX=/usr VERSION=$(DEB_VERSION_UPSTREAM) linux-dep linux-install
 
-clean:
-	dh_testdir
+override_dh_auto_clean:
 	-$(MAKE) linux-clean
-	dh_clean
-
-
-binary-libtermcapparser: DH_OPTIONS=-plibtermcapparser
-binary-libtermcapparser: build
-	dh_testdir
-	dh_testroot
-	dh_installdirs
-	dh_install
-	dh_installdocs
-	dh_installchangelogs
-	dh_makeshlibs
-	dh_shlibdeps
-	dh_strip -plibtermcapparser --dbg-package=libtermcapparser-dbg
-	dh_compress
-	dh_fixperms
-
-binary-arch: DH_OPTIONS=-a
-binary-arch: binary-libtermcapparser binary-libtermcapparser-dev
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	mkdir -p debian/libtermcapparser-dbg/usr/share/doc/libtermcapparser-dbg
-	dh_third_party_meta
-	dh_builddeb
-
-binary: binary-arch
-
-binary-libtermcapparser-dev: DH_OPTIONS=-plibtermcapparser-dev
-binary-libtermcapparser-dev: build
-	dh_testdir
-	dh_testroot
-	dh_installdirs
-	dh_install
-	dh_installchangelogs
-	dh_installdocs
-	dh_compress
-	dh_fixperms
-
-.PHONY: build clean binary-arch binary
-
-.PHONY: binary-libtermcapparser binary-libtermcapparser-dev
