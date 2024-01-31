@@ -1,3 +1,9 @@
+libtermcapparser (1.0.20) jammy; urgency=low
+
+  * Use pkgconfig
+
+ -- Robert Manner <robert.manner@oneidentity.com>  Wed, 31 Jan 2024 15:03:02 +0000
+
 libtermcapparser (1.0.19) jammy; urgency=low
 
   * OS upgrade
